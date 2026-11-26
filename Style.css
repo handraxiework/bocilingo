@@ -1,0 +1,341 @@
+/* Tema pastel lembut. Radius semua komponen diatur satu tempat: --r (sm) */
+:root {
+    --r: 4px;
+    --bg: #f4f7fa;
+    --surface: #ffffff;
+    --ink: #3f4b5c;
+    --muted: #7c8898;
+    --line: #dce4ec;
+    --blue: #cfe3f5;
+    --blue-d: #9bbfe0;
+    --mint: #d8f0e3;
+    --mint-d: #98cdb0;
+    --blush: #f8dcdc;
+    --blush-d: #e3a9a9;
+    --butter: #faefc9;
+    --lav: #e6e0f4;
+    --lav-d: #bdb2dc;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+}
+
+#app {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+    margin: 0 0 8px;
+    font-weight: 800;
+}
+
+h1 {
+    font-size: 1.7rem;
+}
+
+h2 {
+    font-size: 1.3rem;
+}
+
+h3 {
+    font-size: 1.05rem;
+}
+
+p {
+    margin: 0 0 12px;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.center {
+    text-align: center;
+}
+
+.card {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: var(--r);
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.stack>*+* {
+    margin-top: 12px;
+}
+
+/* Tombol & input */
+button,
+input,
+select {
+    font: inherit;
+    color: inherit;
+    border-radius: var(--r);
+}
+
+button {
+    cursor: pointer;
+    border: 2px solid var(--blue-d);
+    background: var(--blue);
+    padding: 12px 18px;
+    font-weight: 700;
+}
+
+button:hover:not(:disabled) {
+    background: #c2dcf2;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+button.ghost {
+    background: var(--surface);
+    border-color: var(--line);
+}
+
+button.full {
+    width: 100%;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--line);
+    background: var(--surface);
+}
+
+input:focus,
+button:focus-visible {
+    outline: 3px solid var(--lav-d);
+    outline-offset: 1px;
+}
+
+label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.error {
+    background: var(--blush);
+    border: 2px solid var(--blush-d);
+    border-radius: var(--r);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+/* Header & statistik */
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.chips {
+    display: flex;
+    gap: 8px;
+}
+
+.chip {
+    background: var(--butter);
+    border: 2px solid #ecdca0;
+    border-radius: var(--r);
+    padding: 4px 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* Jalur belajar */
+.unit {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: var(--r);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.unit-head {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.unit-icon {
+    font-size: 2rem;
+    background: var(--lav);
+    border-radius: var(--r);
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+}
+
+.lessons {
+    display: grid;
+    gap: 8px;
+}
+
+.lesson {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    width: 100%;
+}
+
+.lesson.SELESAI {
+    background: var(--mint);
+    border-color: var(--mint-d);
+}
+
+.lesson.TERKUNCI {
+    background: #eef1f4;
+    border-color: var(--line);
+    color: var(--muted);
+}
+
+/* Pelajaran */
+.bar {
+    height: 14px;
+    background: var(--line);
+    border-radius: var(--r);
+    overflow: hidden;
+    flex: 1;
+}
+
+.bar>i {
+    display: block;
+    height: 100%;
+    background: var(--mint-d);
+    transition: width .3s;
+}
+
+.q-img {
+    font-size: 4.5rem;
+    text-align: center;
+    margin: 8px 0;
+}
+
+.q-text {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 14px;
+}
+
+.speak {
+    background: var(--lav);
+    border-color: var(--lav-d);
+}
+
+.opts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.opt {
+    background: var(--surface);
+    border-color: var(--line);
+    font-size: 1.15rem;
+    padding: 16px 10px;
+}
+
+.opt.sel {
+    background: var(--blue);
+    border-color: var(--blue-d);
+}
+
+.opt.ok {
+    background: var(--mint);
+    border-color: var(--mint-d);
+}
+
+.opt.bad {
+    background: var(--blush);
+    border-color: var(--blush-d);
+}
+
+.opt.used {
+    opacity: .35;
+}
+
+.tray {
+    min-height: 56px;
+    border-bottom: 2px solid var(--line);
+    padding: 6px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tile {
+    background: var(--surface);
+    border-color: var(--lav-d);
+    padding: 8px 14px;
+}
+
+.match {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Umpan balik di bawah layar */
+.feedback {
+    position: sticky;
+    bottom: 0;
+    margin: 16px -16px -16px;
+    padding: 14px 16px;
+    border-top: 2px solid var(--line);
+    background: var(--surface);
+}
+
+.feedback.ok {
+    background: var(--mint);
+    border-color: var(--mint-d);
+}
+
+.feedback.bad {
+    background: var(--blush);
+    border-color: var(--blush-d);
+}
+
+.stars {
+    font-size: 2.6rem;
+    letter-spacing: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition: none !important;
+    }
+}
