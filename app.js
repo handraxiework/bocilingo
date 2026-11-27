@@ -1,5 +1,5 @@
-/* English Kids - Frontend. Ganti API_URL dengan URL Web App Apps Script Anda. */
-const API_URL = 'https://script.google.com/macros/s/AKfycbz8cuN1Dents0tnDyJTrb56kCn2HocL3GgftcQ5QHK5qoNxpd5qWB1u1oGqaIWya7YbCw/exec';
+/* English Kids - Frontend. Alamat API dibaca dari config.js (tidak perlu diubah di file ini). */
+const API_URL = (window.APP_CONFIG || {}).API_URL || '';
 const MAX_HEARTS = 5;
 const SPEAK_TYPES = ['PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK', 'PILIH_GAMBAR'];
 const CHOICE_TYPES = ['PILIH_GAMBAR', 'PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK'];
@@ -18,6 +18,7 @@ const loader = (text = 'Tunggu sebentar...', small = false) =>
     `<div class="load-wrap${small ? ' sm' : ''}"><div class="loader-${['a', 'b', 'c'][Math.floor(Math.random() * 3)]}"></div><p class="muted">${esc(text)}</p></div>`;
 
 async function api(action, data = {}) {
+    if (!/^https:\/\/script\.google\.com\//.test(API_URL)) throw new Error('Alamat API belum diatur. Isi API_URL di file config.js');
     // text/plain menghindari preflight CORS pada Apps Script
     const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, token: S.token, ...data }) });
     const j = await r.json();
