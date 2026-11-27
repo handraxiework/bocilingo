@@ -4,17 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bocilingo</title>
+    <title>B O C I L I N G O</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800&display=swap">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body>
     <div id="app">
         <p class="center muted">Memuat...</p>
     </div>
-    <script src="app.js"></script>
+    <script>
+        // config.js selalu diambil baru (anti-cache), jadi ganti URL API langsung berlaku
+        document.write('<script src="config.js?t=' + Date.now() + '"><\/script>');
+    </script>
+    <script src="app.js?v=4"></script>
 </body>
 
 </html>
