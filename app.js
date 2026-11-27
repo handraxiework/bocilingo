@@ -1,5 +1,5 @@
 /* English Kids - Frontend. Ganti API_URL dengan URL Web App Apps Script Anda. */
-const API_URL = 'GANTI_DENGAN_URL_WEB_APP';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz8cuN1Dents0tnDyJTrb56kCn2HocL3GgftcQ5QHK5qoNxpd5qWB1u1oGqaIWya7YbCw/exec';
 const MAX_HEARTS = 5;
 const SPEAK_TYPES = ['PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK', 'PILIH_GAMBAR'];
 const CHOICE_TYPES = ['PILIH_GAMBAR', 'PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK'];
