@@ -1,5 +1,5 @@
 /* English Kids - Frontend. Ganti API_URL dengan URL Web App Apps Script Anda. */
-const API_URL = 'https://script.google.com/macros/s/AKfycbz8cuN1Dents0tnDyJTrb56kCn2HocL3GgftcQ5QHK5qoNxpd5qWB1u1oGqaIWya7YbCw/exec';
+const API_URL = 'GANTI_DENGAN_URL_WEB_APP';
 const MAX_HEARTS = 5;
 const SPEAK_TYPES = ['PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK', 'PILIH_GAMBAR'];
 const CHOICE_TYPES = ['PILIH_GAMBAR', 'PILIH_ARTI', 'DENGAR_PILIH', 'ISI_TITIK'];
@@ -13,6 +13,9 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
 const view = html => { $app.innerHTML = html; window.scrollTo(0, 0); };
 const err = m => `<div class="error">${esc(m)}</div>`;
+// Loader acak: a = minuman, b = es krim, c = semangka. small=true untuk area kecil (bar bawah)
+const loader = (text = 'Tunggu sebentar...', small = false) =>
+    `<div class="load-wrap${small ? ' sm' : ''}"><div class="loader-${['a', 'b', 'c'][Math.floor(Math.random() * 3)]}"></div><p class="muted">${esc(text)}</p></div>`;
 
 async function api(action, data = {}) {
     // text/plain menghindari preflight CORS pada Apps Script
@@ -47,9 +50,10 @@ function showLogin(msg = '', mode = 'masuk') {
     document.getElementById('sw').onclick = () => showLogin('', daftar ? 'masuk' : 'daftar');
     document.getElementById('go').onclick = async e => {
         const v = id => (document.getElementById(id) || {}).value;
-        e.target.disabled = true; e.target.textContent = 'Tunggu sebentar...';
+        const body = { username: v('u'), password: v('p'), nama: v('n'), grade: v('g'), kode: v('k'), role: 'anak' };
+        view(loader(daftar ? 'Membuat akun...' : 'Sedang masuk...'));
         try {
-            const r = await api(daftar ? 'register' : 'login', { username: v('u'), password: v('p'), nama: v('n'), grade: v('g'), kode: v('k'), role: 'anak' });
+            const r = await api(daftar ? 'register' : 'login', body);
             S.token = r.token; localStorage.setItem('tk', r.token); showHome();
         } catch (x) { showLogin(x.message, mode); }
     };
@@ -57,7 +61,7 @@ function showLogin(msg = '', mode = 'masuk') {
 
 /* ---------- Beranda: jalur belajar ---------- */
 async function showHome() {
-    view('<p class="center muted">Memuat pelajaran...</p>');
+    view(loader('Memuat pelajaran...'));
     try {
         const r = await api('home'); S.user = r.user;
         view(`<div class="top"><div><h2>Halo, ${esc(r.user.nama)}!</h2><span class="muted">Kelas ${esc(r.user.grade)} SD</span></div>
@@ -65,7 +69,7 @@ async function showHome() {
       ${r.units.map(u => `<div class="unit"><div class="unit-head"><div class="unit-icon">${esc(u.ikon)}</div>
         <div><h3>${esc(u.judul)}</h3><span class="muted">${esc(u.deskripsi)}</span></div></div>
         <div class="lessons">${u.lessons.map(l => `<button class="lesson ${l.status}" ${l.status === 'TERKUNCI' ? 'disabled' : ''} data-id="${esc(l.lesson_id)}">
-          <span>${esc(l.judul)}</span><span>${l.status === 'SELESAI' ? '⭐'.repeat(l.bintang) : l.status === 'TERKUNCI' ? '🔒' : `+${esc(l.xp_reward)} XP`}</span></button>`).join('')}</div></div>`).join('')}
+          <span>${esc(l.judul)}<br><small class="muted">${l.status === 'TERKUNCI' ? 'Terkunci' : l.status === 'SELESAI' ? 'Selesai, main lagi' : 'Sesi ' + (l.sesi_selesai + 1) + ' dari ' + l.jumlah_sesi}</small></span><span>${l.status === 'SELESAI' ? '⭐'.repeat(l.bintang) : l.status === 'TERKUNCI' ? '🔒' : '●'.repeat(l.sesi_selesai) + '○'.repeat(l.jumlah_sesi - l.sesi_selesai)}</span></button>`).join('')}</div></div>`).join('')}
       <button class="ghost full" id="out">Keluar</button>`);
         document.querySelectorAll('.lesson').forEach(b => b.onclick = () => startLesson(b.dataset.id));
         document.getElementById('out').onclick = () => { localStorage.removeItem('tk'); S.token = null; showLogin(); };
@@ -74,10 +78,10 @@ async function showHome() {
 
 /* ---------- Pelajaran ---------- */
 async function startLesson(id) {
-    view('<p class="center muted">Menyiapkan soal...</p>');
+    view(loader('Menyiapkan soal...'));
     try {
         const r = await api('getLesson', { lesson_id: id });
-        L = { id, judul: r.lesson.judul, qs: r.questions, i: 0, hearts: MAX_HEARTS, answers: [], ans: null, checked: false };
+        L = { id, judul: r.lesson.judul, sesi: r.sesi, qs: r.questions, i: 0, hearts: MAX_HEARTS, answers: [], ans: null, checked: false };
         if (!L.qs.length) throw new Error('Pelajaran ini belum punya soal');
         showQuestion();
     } catch (x) { alert(x.message); showHome(); }
@@ -151,14 +155,18 @@ function renderMatch(q, box) {
 }
 
 async function checkNow() {
-    const q = L.qs[L.i], btn = document.getElementById('check');
-    btn.disabled = true; btn.textContent = 'Memeriksa...';
+    const q = L.qs[L.i], fb = document.getElementById('fb');
+    fb.innerHTML = loader('Memeriksa...', true);
     try {
         const r = await api('checkAnswer', { lesson_id: L.id, question_id: q.id, answer: L.ans });
         L.checked = true;
         document.querySelectorAll('#input .opt').forEach(b => { if (b.dataset.v === r.jawaban) b.classList.add('ok'); else if (b.classList.contains('sel')) b.classList.add('bad'); });
         showFeedback(r.benar, r.jawaban, r.penjelasan);
-    } catch (x) { btn.disabled = false; btn.textContent = 'Periksa'; alert(x.message); }
+    } catch (x) {
+        fb.innerHTML = '<button class="full" id="check">Periksa</button>';
+        document.getElementById('check').onclick = checkNow;
+        alert(x.message);
+    }
 }
 
 function showFeedback(benar, jawaban, penjelasan) {
@@ -178,15 +186,16 @@ function showFeedback(benar, jawaban, penjelasan) {
 }
 
 async function finish(kehabisanNyawa) {
-    view('<p class="center muted">Menyimpan hasil...</p>');
+    view(loader('Menyimpan hasil...'));
     try {
-        const r = await api('finishLesson', { lesson_id: L.id, answers: L.answers });
+        const r = await api('finishLesson', { lesson_id: L.id, sesi: L.sesi, answers: L.answers });
         if (kehabisanNyawa || !r.selesai) {
             view(`<div class="card center stack"><div class="q-img">💪</div><h2>Ayo coba lagi!</h2><p>Nyawa habis. Belajar sedikit lagi, pasti bisa.</p>
         <button class="full" onclick="startLesson('${esc(L.id)}')">Ulangi pelajaran</button><button class="ghost full" onclick="showHome()">Kembali</button></div>`);
         } else {
             view(`<div class="card center stack"><h1>Hebat! 🎉</h1><div class="stars">${'⭐'.repeat(r.stars)}</div>
         <p>${r.benar} dari ${r.total} soal benar</p>
+        <p><b>${r.level_selesai ? '🏆 Level selesai! Level berikutnya terbuka.' : 'Sesi ' + r.sesi_selesai + ' dari ' + r.jumlah_sesi + ' selesai'}</b></p>
         <div class="chips" style="justify-content:center"><span class="chip">+${r.xp} XP</span><span class="chip">🔥 ${r.streak} hari</span></div>
         <button class="full" onclick="showHome()">Lanjut belajar</button></div>`);
         }
