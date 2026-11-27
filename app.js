@@ -32,6 +32,39 @@ function say(t) {
 }
 window.say = say;
 
+/* ---------- Efek suara (dibuat dengan Web Audio, tanpa file audio) ---------- */
+let AC = null;
+const muted = () => { try { return localStorage.getItem('mute') === '1'; } catch (e) { return false; } };
+function ac() {
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended' && AC.resume) AC.resume().catch(() => { });
+    return AC;
+}
+document.addEventListener('pointerdown', () => { try { ac(); } catch (e) { } }, { once: true }); // browser mengizinkan suara setelah sentuhan pertama
+function tone(f, t0, dur, vol = 0.16, type = 'triangle') {
+    const a = ac(), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+}
+const SFX = {
+    // selesai 1 sesi: tiga denting riang naik
+    session() { const t = ac().currentTime + 0.03;[784, 988, 1319].forEach((f, i) => tone(f, t + i * 0.11, 0.5)); },
+    // selesai 1 level: tangga nada pentatonik naik, akor terang, lalu kilau di ujung
+    level() {
+        const t = ac().currentTime + 0.03;
+        [523, 659, 784, 880, 1047].forEach((f, i) => tone(f, t + i * 0.1, 0.45));
+        [1047, 1319, 1568].forEach(f => tone(f, t + 0.62, 1.1, 0.1));
+        tone(262, t + 0.62, 1.2, 0.12, 'sine');
+        [2093, 2637, 3136].forEach((f, i) => tone(f, t + 0.95 + i * 0.09, 0.35, 0.04, 'sine'));
+    }
+};
+function sfx(name) { if (muted()) return; try { SFX[name](); } catch (e) { } }
+window.sfx = sfx;
+
 /* ---------- Login / daftar ---------- */
 function showLogin(msg = '', mode = 'masuk') {
     const daftar = mode === 'daftar';
@@ -65,7 +98,7 @@ async function showHome() {
     try {
         const r = await api('home'); S.user = r.user;
         view(`<div class="top"><div><h2>Halo, ${esc(r.user.nama)}!</h2><span class="muted">Kelas ${esc(r.user.grade)} SD</span></div>
-      <div class="chips"><span class="chip">⭐ ${esc(r.user.xp)}</span><span class="chip">🔥 ${esc(r.user.streak)}</span></div></div>
+      <div class="chips"><span class="chip">⭐ ${esc(r.user.xp)}</span><span class="chip">🔥 ${esc(r.user.streak)}</span><button class="ghost" id="snd" style="padding:4px 10px" aria-label="Suara">${muted() ? '🔇' : '🔊'}</button></div></div>
       ${r.units.map(u => `<div class="unit"><div class="unit-head"><div class="unit-icon">${esc(u.ikon)}</div>
         <div><h3>${esc(u.judul)}</h3><span class="muted">${esc(u.deskripsi)}</span></div></div>
         <div class="lessons">${u.lessons.map(l => `<button class="lesson ${l.status}" ${l.status === 'TERKUNCI' ? 'disabled' : ''} data-id="${esc(l.lesson_id)}">
@@ -73,6 +106,7 @@ async function showHome() {
       <button class="ghost full" id="out">Keluar</button>`);
         document.querySelectorAll('.lesson').forEach(b => b.onclick = () => startLesson(b.dataset.id));
         document.getElementById('out').onclick = () => { localStorage.removeItem('tk'); S.token = null; showLogin(); };
+        document.getElementById('snd').onclick = e => { const m = !muted(); localStorage.setItem('mute', m ? '1' : '0'); e.target.textContent = m ? '🔇' : '🔊'; if (!m) sfx('session'); };
     } catch (x) { localStorage.removeItem('tk'); S.token = null; showLogin(x.message); }
 }
 
@@ -193,6 +227,7 @@ async function finish(kehabisanNyawa) {
             view(`<div class="card center stack"><div class="q-img">💪</div><h2>Ayo coba lagi!</h2><p>Nyawa habis. Belajar sedikit lagi, pasti bisa.</p>
         <button class="full" onclick="startLesson('${esc(L.id)}')">Ulangi pelajaran</button><button class="ghost full" onclick="showHome()">Kembali</button></div>`);
         } else {
+            sfx(r.level_selesai ? 'level' : 'session');
             view(`<div class="card center stack"><h1>Hebat! 🎉</h1><div class="stars">${'⭐'.repeat(r.stars)}</div>
         <p>${r.benar} dari ${r.total} soal benar</p>
         <p><b>${r.level_selesai ? '🏆 Level selesai! Level berikutnya terbuka.' : 'Sesi ' + r.sesi_selesai + ' dari ' + r.jumlah_sesi + ' selesai'}</b></p>
