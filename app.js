@@ -75,7 +75,7 @@ function showLogin(msg = '', mode = 'masuk') {
     ${msg ? err(msg) : ''}
     <div><label>Username</label><input id="u" autocapitalize="none" autocomplete="username"></div>
     <div><label>Password</label><input id="p" type="password" autocomplete="current-password"></div>
-    ${daftar ? `<div><label>Nama panggilan</label><input id="n"></div>
+    ${daftar ? `<div><label>Nama panggilan (bukan nama lengkap)</label><input id="n"></div>
       <div><label>Kelas</label><select id="g"><option value="2">Kelas 2 SD</option><option value="4">Kelas 4 SD</option></select></div>
       <div><label>Kode pendaftaran</label><input id="k"></div>` : ''}
     <button class="full" id="go">${daftar ? 'Daftar' : 'Masuk'}</button>
@@ -100,6 +100,7 @@ async function showHome() {
         const r = await api('home'); S.user = r.user;
         view(`<div class="top"><div><h2>Halo, ${esc(r.user.nama)}!</h2><span class="muted">Kelas ${esc(r.user.grade)} SD</span></div>
       <div class="chips"><span class="chip">⭐ ${esc(r.user.xp)}</span><span class="chip">🔥 ${esc(r.user.streak)}</span><button class="ghost" id="snd" style="padding:4px 10px" aria-label="Suara">${muted() ? '🔇' : '🔊'}</button></div></div>
+      <button class="full" id="rank" style="margin-bottom:14px">🏆 Lihat Peringkat</button>
       ${r.units.map(u => `<div class="unit"><div class="unit-head"><div class="unit-icon">${esc(u.ikon)}</div>
         <div><h3>${esc(u.judul)}</h3><span class="muted">${esc(u.deskripsi)}</span></div></div>
         <div class="lessons">${u.lessons.map(l => `<button class="lesson ${l.status}" ${l.status === 'TERKUNCI' ? 'disabled' : ''} data-id="${esc(l.lesson_id)}">
@@ -107,8 +108,32 @@ async function showHome() {
       <button class="ghost full" id="out">Keluar</button>`);
         document.querySelectorAll('.lesson').forEach(b => b.onclick = () => startLesson(b.dataset.id));
         document.getElementById('out').onclick = () => { localStorage.removeItem('tk'); S.token = null; showLogin(); };
+        document.getElementById('rank').onclick = () => showRanking();
         document.getElementById('snd').onclick = e => { const m = !muted(); localStorage.setItem('mute', m ? '1' : '0'); e.target.textContent = m ? '🔇' : '🔊'; if (!m) sfx('session'); };
     } catch (x) { localStorage.removeItem('tk'); S.token = null; showLogin(x.message); }
+}
+
+/* ---------- Peringkat ---------- */
+async function showRanking(scope = 'kelas', period = 'minggu') {
+    view(loader('Memuat peringkat...'));
+    try {
+        const r = await api('leaderboard', { scope, period });
+        const seg = (k, v, label, cur) => `<button class="seg ${cur === v ? 'on' : ''}" data-k="${k}" data-v="${v}">${label}</button>`;
+        const row = x => `<div class="rank-row ${x.me ? 'me' : ''}"><span class="rank-no">${['🥇', '🥈', '🥉'][x.rank - 1] || x.rank}</span>
+      <span class="rank-name">${esc(x.nama)}${scope === 'semua' ? ` <small class="muted">Kelas ${esc(x.grade)}</small>` : ''}</span><span class="chip">⭐ ${esc(x.skor)}</span></div>`;
+        const inTop = r.top.some(x => x.me), when = period === 'minggu' ? 'minggu ini' : 'sejauh ini';
+        let mine = '';
+        if (r.me && r.me.skor > 0) mine = `<p class="center">Kamu di peringkat <b>#${r.me.rank}</b> dari ${r.total} pemain 🎉</p>`;
+        else if (r.me) mine = `<div class="card center">Kamu belum punya XP ${when}. Selesaikan 1 sesi untuk masuk peringkat! 💪</div>`;
+        view(`<div class="top"><button class="ghost" id="back">←</button><h2>Peringkat</h2><span style="width:48px"></span></div>
+      <div class="seg-group">${seg('scope', 'kelas', 'Kelas saya', scope)}${seg('scope', 'semua', 'Semua kelas', scope)}</div>
+      <div class="seg-group">${seg('period', 'minggu', 'Minggu ini', period)}${seg('period', 'total', 'Semua waktu', period)}</div>
+      ${mine}
+      <div class="card">${r.top.length ? r.top.map(row).join('') : '<p class="center muted">Belum ada yang mendapat XP. Jadilah yang pertama! 🌱</p>'}
+        ${r.me && r.me.skor > 0 && !inTop ? `<p class="center muted" style="margin:4px 0">• • •</p>${row({ rank: r.me.rank, nama: 'Kamu', grade: S.user ? S.user.grade : '', skor: r.me.skor, me: true })}` : ''}</div>`);
+        document.getElementById('back').onclick = showHome;
+        document.querySelectorAll('.seg').forEach(b => b.onclick = () => showRanking(b.dataset.k === 'scope' ? b.dataset.v : scope, b.dataset.k === 'period' ? b.dataset.v : period));
+    } catch (x) { alert(x.message); showHome(); }
 }
 
 /* ---------- Pelajaran ---------- */
@@ -232,6 +257,7 @@ async function finish(kehabisanNyawa) {
             view(`<div class="card center stack"><h1>Hebat! 🎉</h1><div class="stars">${'⭐'.repeat(r.stars)}</div>
         <p>${r.benar} dari ${r.total} soal benar</p>
         <p><b>${r.level_selesai ? '🏆 Level selesai! Level berikutnya terbuka.' : 'Sesi ' + r.sesi_selesai + ' dari ' + r.jumlah_sesi + ' selesai'}</b></p>
+        ${r.rank ? `<p>🏅 Peringkat kelas minggu ini: <b>#${r.rank}</b> dari ${r.rank_total}</p>` : ''}
         <div class="chips" style="justify-content:center"><span class="chip">+${r.xp} XP</span><span class="chip">🔥 ${r.streak} hari</span></div>
         <button class="full" onclick="showHome()">Lanjut belajar</button></div>`);
         }
